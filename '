@@ -16,7 +16,7 @@ async fn run() {
     let mut wgpu_state = WgpuState::new(&window_state.window).await;
     let mut update_display = false;
 
-    chip8_state.load_rom(include_bytes!(r"assets/ibm.ch8"));
+    chip8_state.load_rom(include_bytes!(r"assets/maze.ch8"));
 
     while !window_state.window.should_close() {
         window_state.glfw.poll_events();
@@ -41,8 +41,7 @@ async fn run() {
         chip8_state.emulate_cycle(&mut update_display);
 
         if update_display {
-            wgpu_state.update_display(&chip8_state);
-            update_display = false;
+        wgpu_state.update_display(&chip8_state);
         }
     }
 }

@@ -1,5 +1,7 @@
 use wgpu::util::DeviceExt;
 
+use crate::chip8::*;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -10,7 +12,6 @@ pub struct Vertex {
 struct Mesh {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    num_vertices: u32,
     num_indices: u32,
 }
 
@@ -24,6 +25,8 @@ pub struct WgpuState {
     render_pipeline: wgpu::RenderPipeline,
     display_bind_group: wgpu::BindGroup,
     quad_mesh: Mesh,
+    texture_size: wgpu::Extent3d,
+    display_texture: wgpu::Texture,
 }
 
 impl Vertex {
@@ -42,25 +45,42 @@ impl Vertex {
 pub const QUAD_VERTICES: &[Vertex] = &[
     Vertex {
         position: [-1.0, -1.0, 0.0],
-        tex_coords: [0.0, 0.0],
-    },
-    Vertex {
-        position: [-1.0, 1.0, 0.0],
         tex_coords: [0.0, 1.0],
     },
     Vertex {
+        position: [-1.0, 1.0, 0.0],
+        tex_coords: [0.0, 0.0],
+    },
+    Vertex {
         position: [1.0, 1.0, 0.0],
-        tex_coords: [1.0, 1.0],
+        tex_coords: [1.0, 0.0],
     },
     Vertex {
         position: [1.0, -1.0, 0.0],
-        tex_coords: [1.0, 0.0],
+        tex_coords: [1.0, 1.0],
     },
 ];
 
 pub const QUAD_INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
 
 impl WgpuState {
+    pub fn update_display(&mut self, chip8_state: &Chip8State) {
+        self.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &self.display_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            chip8_state.graphics.as_slice(),
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(self.texture_size.width),
+                rows_per_image: Some(self.texture_size.height),
+            },
+            self.texture_size,
+        );
+    }
     pub async fn new(window: &glfw::Window) -> Self {
         let size = window.get_framebuffer_size();
 
@@ -111,16 +131,9 @@ impl WgpuState {
 
         surface.configure(&device, &config);
 
-        let diffuse_bytes = include_bytes!("assets/amethyst_block.png");
-        let diffuse_image = image::load_from_memory(diffuse_bytes).unwrap();
-        let diffuse_rgba = diffuse_image.to_rgba8();
-
-        use image::GenericImageView;
-        let dimensions = diffuse_image.dimensions();
-
         let texture_size = wgpu::Extent3d {
-            width: dimensions.0,
-            height: dimensions.1,
+            width: SCREEN_WIDTH as u32,
+            height: SCREEN_HEIGHT as u32,
             depth_or_array_layers: 1,
         };
         let display_texture = device.create_texture(&wgpu::TextureDescriptor {
@@ -128,27 +141,11 @@ impl WgpuState {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            format: wgpu::TextureFormat::R8Unorm,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             label: Some("display_texture"),
             view_formats: &[],
         });
-
-        queue.write_texture(
-            wgpu::ImageCopyTexture {
-                texture: &display_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &diffuse_rgba,
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(4 * dimensions.0),
-                rows_per_image: Some(dimensions.1),
-            },
-            texture_size,
-        );
 
         let display_texture_view =
             display_texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -211,7 +208,6 @@ impl WgpuState {
                 contents: bytemuck::cast_slice(QUAD_INDICES),
                 usage: wgpu::BufferUsages::INDEX,
             }),
-            num_vertices: QUAD_VERTICES.len() as u32,
             num_indices: QUAD_INDICES.len() as u32,
         };
 
@@ -269,6 +265,8 @@ impl WgpuState {
             render_pipeline,
             display_bind_group,
             quad_mesh,
+            texture_size,
+            display_texture,
         }
     }
 

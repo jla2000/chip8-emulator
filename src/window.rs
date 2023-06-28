@@ -14,6 +14,7 @@ pub fn create_window() -> WindowState {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
     glfw.window_hint(glfw::WindowHint::SRgbCapable(true));
     glfw.window_hint(glfw::WindowHint::ClientApi(glfw::ClientApiHint::NoApi));
+    glfw.window_hint(glfw::WindowHint::Resizable(false));
 
     let (mut window, events) = glfw
         .create_window(

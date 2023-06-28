@@ -2,10 +2,10 @@ use rand::Rng;
 
 use crate::utility::*;
 
+pub const SCREEN_WIDTH: usize = 64;
+pub const SCREEN_HEIGHT: usize = 32;
 const ROM_START_ADDRESS: usize = 0x200;
 const VF: usize = 15;
-const SCREEN_WIDTH: usize = 64;
-const SCREEN_HEIGHT: usize = 32;
 
 const FONTSET: &[u8] = &[
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -22,14 +22,13 @@ const FONTSET: &[u8] = &[
     0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
     0xF0, 0x80, 0x80, 0x80, 0xF0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E 0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
 pub struct Chip8State {
     memory: [u8; 4096],
     stack: Vec<u16>,
-    graphics: [u8; SCREEN_WIDTH * SCREEN_HEIGHT],
+    pub graphics: [u8; SCREEN_WIDTH * SCREEN_HEIGHT],
     regs: [u8; 16],
     keys: [bool; 16],
     pc: usize,
@@ -56,17 +55,6 @@ impl Chip8State {
         }
     }
 
-    pub fn print_screen(&self) {
-        println!();
-        for y in 0..SCREEN_HEIGHT {
-            for x in 0..SCREEN_WIDTH {
-                let idx = y * SCREEN_WIDTH + x;
-                print!("{}", if self.graphics[idx] != 0 { "X" } else { " " });
-            }
-            println!();
-        }
-    }
-
     pub fn load_rom(&mut self, rom_bytes: &[u8]) {
         self.memory[ROM_START_ADDRESS..ROM_START_ADDRESS + rom_bytes.len()]
             .clone_from_slice(rom_bytes);
@@ -77,13 +65,7 @@ impl Chip8State {
         ((self.memory[self.pc] as u16) << 8) | (self.memory[self.pc + 1] as u16)
     }
 
-    pub fn run(&mut self) {
-        while self.pc < self.memory.len() {
-            self.emulate_cycle();
-        }
-    }
-
-    pub fn emulate_cycle(&mut self) {
+    pub fn emulate_cycle(&mut self, update_display: &mut bool) {
         let opcode = self.fetch_next_opcode();
         let nnn = opcode & 0x0fff;
         let nn = opcode as u8;
@@ -205,7 +187,7 @@ impl Chip8State {
                     }
                 }
 
-                self.print_screen();
+                *update_display = true;
             }
             (0xE, vx, 0x9, 0xE) => {
                 let key = self.regs[vx as usize] as usize;

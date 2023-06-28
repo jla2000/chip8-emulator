@@ -9,12 +9,6 @@ pub struct Vertex {
     pub tex_coords: [f32; 2],
 }
 
-struct Mesh {
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    num_indices: u32,
-}
-
 pub struct WgpuState {
     pub size: (u32, u32),
     instance: wgpu::Instance,
@@ -24,7 +18,9 @@ pub struct WgpuState {
     config: wgpu::SurfaceConfiguration,
     render_pipeline: wgpu::RenderPipeline,
     display_bind_group: wgpu::BindGroup,
-    quad_mesh: Mesh,
+    vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+    num_indices: u32,
     texture_size: wgpu::Extent3d,
     display_texture: wgpu::Texture,
 }
@@ -124,7 +120,7 @@ impl WgpuState {
             format: surface_format,
             width: size.0 as u32,
             height: size.1 as u32,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: wgpu::PresentMode::AutoNoVsync,
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
         };
@@ -197,19 +193,17 @@ impl WgpuState {
             ],
         });
 
-        let quad_mesh = Mesh {
-            vertex_buffer: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(QUAD_VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            }),
-            index_buffer: device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(QUAD_INDICES),
-                usage: wgpu::BufferUsages::INDEX,
-            }),
-            num_indices: QUAD_INDICES.len() as u32,
-        };
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(QUAD_VERTICES),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(QUAD_INDICES),
+            usage: wgpu::BufferUsages::INDEX,
+        });
+        let num_indices = QUAD_INDICES.len() as u32;
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shaders/display.wgsl"));
 
@@ -264,7 +258,9 @@ impl WgpuState {
             config,
             render_pipeline,
             display_bind_group,
-            quad_mesh,
+            vertex_buffer,
+            index_buffer,
+            num_indices,
             texture_size,
             display_texture,
         }
@@ -310,12 +306,9 @@ impl WgpuState {
 
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.display_bind_group, &[]);
-            render_pass.set_vertex_buffer(0, self.quad_mesh.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(
-                self.quad_mesh.index_buffer.slice(..),
-                wgpu::IndexFormat::Uint16,
-            );
-            render_pass.draw_indexed(0..self.quad_mesh.num_indices, 0, 0..1);
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

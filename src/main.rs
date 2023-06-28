@@ -16,7 +16,7 @@ async fn run() {
     let mut wgpu_state = WgpuState::new(&window_state.window).await;
     let mut update_display = false;
 
-    chip8_state.load_rom(include_bytes!(r"assets/ibm.ch8"));
+    chip8_state.load_rom(include_bytes!(r"assets/octojam3title.ch8"));
 
     while !window_state.window.should_close() {
         window_state.glfw.poll_events();

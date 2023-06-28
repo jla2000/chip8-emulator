@@ -108,7 +108,7 @@ impl Chip8State {
                 self.regs[vx as usize] = nn;
             }
             (0x7, vx, _, _) => {
-                self.regs[vx as usize] += nn;
+                self.regs[vx as usize] = self.regs[vx as usize].wrapping_add(nn);
             }
             (0x8, vx, vy, 0x0) => {
                 self.regs[vx as usize] = self.regs[vy as usize];

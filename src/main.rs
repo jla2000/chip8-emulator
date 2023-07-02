@@ -1,29 +1,34 @@
 use dotenv::dotenv;
-use wgpu::util::DeviceExt;
 
 mod chip8;
-mod graphics;
-mod utility;
+mod keyboard;
+mod render;
 mod window;
 
 use chip8::*;
-use graphics::*;
+use render::*;
 use window::*;
 
 async fn run() {
     let mut window_state = create_window();
     let mut chip8_state = Chip8State::new();
-    let mut wgpu_state = WgpuState::new(&window_state.window).await;
+    let mut renderer = Renderer::new(&window_state.window).await;
     let mut update_display = false;
 
-    chip8_state.load_rom(include_bytes!(r"assets/octojam3title.ch8"));
+    chip8_state.load_rom(include_bytes!(r"assets/tetris.ch8"));
+
+    let mut cycle_clock = fixedstep::FixedStep::start(500.0);
+    let mut timer_clock = fixedstep::FixedStep::start(60.0);
 
     while !window_state.window.should_close() {
         window_state.glfw.poll_events();
         for (_, event) in glfw::flush_messages(&window_state.events) {
             match event {
                 glfw::WindowEvent::FramebufferSize(width, height) => {
-                    wgpu_state.resize((width as u32, height as u32));
+                    renderer.resize((width as u32, height as u32));
+                }
+                glfw::WindowEvent::Key(key, _, action, _) => {
+                    chip8_state.keyboard.update(key, action);
                 }
                 _ => {
                     println!("{:?}", event);
@@ -31,18 +36,17 @@ async fn run() {
             }
         }
 
-        match wgpu_state.render() {
-            Ok(_) => {}
-            Err(wgpu::SurfaceError::Lost) => wgpu_state.resize(wgpu_state.size),
-            Err(wgpu::SurfaceError::OutOfMemory) => break,
-            Err(e) => println!("{:?}", e),
+        if cycle_clock.update() {
+            chip8_state.emulate_cycle(&mut update_display);
+
+            if update_display {
+                renderer.update_display(&chip8_state);
+                update_display = false;
+            }
         }
 
-        chip8_state.emulate_cycle(&mut update_display);
-
-        if update_display {
-            wgpu_state.update_display(&chip8_state);
-            update_display = false;
+        if timer_clock.update() {
+            chip8_state.update_timers();
         }
     }
 }

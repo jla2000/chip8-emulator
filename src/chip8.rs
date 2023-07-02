@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::utility::*;
+use crate::keyboard::*;
 
 pub const SCREEN_WIDTH: usize = 64;
 pub const SCREEN_HEIGHT: usize = 32;
@@ -25,12 +25,21 @@ const FONTSET: &[u8] = &[
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E 0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
+pub fn nibbles(value: u16) -> (u8, u8, u8, u8) {
+    (
+        ((value & 0xf000) >> 12) as u8,
+        ((value & 0x0f00) >> 8) as u8,
+        ((value & 0x00f0) >> 4) as u8,
+        (value & 0x000f) as u8,
+    )
+}
+
 pub struct Chip8State {
+    pub keyboard: Keyboard,
     memory: [u8; 4096],
     stack: Vec<u16>,
     pub graphics: [u8; SCREEN_WIDTH * SCREEN_HEIGHT],
     regs: [u8; 16],
-    keys: [bool; 16],
     pc: usize,
     i: u16,
     sound_timer: u8,
@@ -43,11 +52,11 @@ impl Chip8State {
         memory[0..FONTSET.len()].clone_from_slice(FONTSET);
 
         Self {
+            keyboard: Keyboard::new(),
             memory,
             stack: vec![],
             graphics: [0x00; SCREEN_WIDTH * SCREEN_HEIGHT],
             regs: [0x00; 16],
-            keys: [false; 16],
             pc: 0x0000,
             i: 0x0000,
             sound_timer: 0x00,
@@ -65,11 +74,19 @@ impl Chip8State {
         ((self.memory[self.pc] as u16) << 8) | (self.memory[self.pc + 1] as u16)
     }
 
+    pub fn update_timers(&mut self) {
+        self.delay_timer = self.delay_timer.saturating_sub(1);
+        self.sound_timer = self.sound_timer.saturating_sub(1);
+    }
+
+    pub fn is_beeping(&self) -> bool {
+        self.sound_timer > 0
+    }
+
     pub fn emulate_cycle(&mut self, update_display: &mut bool) {
         let opcode = self.fetch_next_opcode();
         let nnn = opcode & 0x0fff;
         let nn = opcode as u8;
-        let mut keep_pc = false;
 
         match nibbles(opcode) {
             (0x0, 0x0, 0xE, 0x0) => {
@@ -78,16 +95,16 @@ impl Chip8State {
             (0x0, 0x0, 0xE, 0xE) => {
                 let return_address = self.stack.pop().unwrap();
                 self.pc = return_address as usize;
-                keep_pc = true;
+                return;
             }
             (0x1, _, _, _) => {
                 self.pc = nnn as usize;
-                keep_pc = true;
+                return;
             }
             (0x2, _, _, _) => {
                 self.stack.push((self.pc + 2) as u16);
                 self.pc = nnn as usize;
-                keep_pc = true;
+                return;
             }
             (0x3, vx, _, _) => {
                 if self.regs[vx as usize] == nn {
@@ -160,7 +177,7 @@ impl Chip8State {
             }
             (0xB, _, _, _) => {
                 self.pc = (self.regs[0] as u16 + nnn) as usize;
-                keep_pc = true;
+                return;
             }
             (0xC, vx, _, _) => {
                 let random: u8 = rand::thread_rng().gen();
@@ -190,14 +207,14 @@ impl Chip8State {
                 *update_display = true;
             }
             (0xE, vx, 0x9, 0xE) => {
-                let key = self.regs[vx as usize] as usize;
-                if self.keys[key] {
+                let key_index = self.regs[vx as usize] as usize;
+                if self.keyboard.get_key_state(key_index) {
                     self.pc += 2;
                 }
             }
             (0xE, vx, 0xA, 0x1) => {
-                let key = self.regs[vx as usize] as usize;
-                if !self.keys[key] {
+                let key_index = self.regs[vx as usize] as usize;
+                if !self.keyboard.get_key_state(key_index) {
                     self.pc += 2;
                 }
             }
@@ -205,8 +222,11 @@ impl Chip8State {
                 self.regs[vx as usize] = self.delay_timer;
             }
             (0xF, vx, 0x0, 0xA) => {
-                // Wait for keypress and store in VX
-                unimplemented!()
+                if let Some(key_index) = self.keyboard.wait_for_key() {
+                    self.regs[vx as usize] = key_index as u8;
+                } else {
+                    return;
+                }
             }
             (0xF, vx, 0x1, 0x5) => {
                 self.delay_timer = self.regs[vx as usize];
@@ -240,8 +260,6 @@ impl Chip8State {
             }
         }
 
-        self.pc += !keep_pc as usize * 2;
-        self.delay_timer = self.delay_timer.saturating_sub(1);
-        self.sound_timer = self.sound_timer.saturating_sub(1);
+        self.pc += 2;
     }
 }

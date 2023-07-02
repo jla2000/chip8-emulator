@@ -9,7 +9,7 @@ pub struct Vertex {
     pub tex_coords: [f32; 2],
 }
 
-pub struct WgpuState {
+pub struct Renderer {
     pub size: (u32, u32),
     instance: wgpu::Instance,
     surface: wgpu::Surface,
@@ -59,7 +59,7 @@ pub const QUAD_VERTICES: &[Vertex] = &[
 
 pub const QUAD_INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
 
-impl WgpuState {
+impl Renderer {
     pub fn update_display(&mut self, chip8_state: &Chip8State) {
         self.queue.write_texture(
             wgpu::ImageCopyTexture {
@@ -76,7 +76,15 @@ impl WgpuState {
             },
             self.texture_size,
         );
+
+        match self.render() {
+            Ok(_) => {}
+            Err(wgpu::SurfaceError::Lost) => self.resize(self.size),
+            Err(wgpu::SurfaceError::OutOfMemory) => panic!("out of memory"),
+            Err(e) => println!("{:?}", e),
+        }
     }
+
     pub async fn new(window: &glfw::Window) -> Self {
         let size = window.get_framebuffer_size();
 
@@ -273,7 +281,7 @@ impl WgpuState {
         self.surface.configure(&self.device, &self.config);
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
             .texture

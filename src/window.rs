@@ -26,6 +26,8 @@ pub fn create_window() -> WindowState {
         .unwrap();
 
     window.set_framebuffer_size_polling(true);
+    window.set_sticky_keys(true);
+    window.set_key_polling(true);
 
     WindowState {
         glfw,

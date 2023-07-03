@@ -8,5 +8,5 @@ My own take on a very simple chip8 emulator, using rust and the wgpu project.
    - Working Keyboard & Audio
 
 ** Screenshots
-   .image ./screenshots/1.png
-   .image ./screenshots/2.png
+   {./screenshots/1.png}[Screenshot 1]
+   {./screenshots/2.png}[Screenshot 2]

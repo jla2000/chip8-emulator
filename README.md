@@ -13,7 +13,5 @@ My own take on a very simple chip8 emulator, using rust and the wgpu project.
 
 ## Screenshots
 
- 
-/screenshots/1.png
- 
-/screenshots/2.png
+[Screenshot 1](./screenshots/1.png)
+[Screenshot 2](./screenshots/2.png)

@@ -7,6 +7,15 @@ My own take on a very simple chip8 emulator, using rust and the wgpu project.
    - Fast wgpu backend
    - Working Keyboard & Audio
 
+** Usage
+   Download any chip8 rom from the internet.
+   Eg. /space_invaders.ch8/:
+
+   @code sh
+   cd chip8-emulator
+   cargo run -- space_invaders.ch8
+   @end
+
 ** Screenshots
    [Screenshot 1]{./screenshots/1.png}
    [Screenshot 2]{./screenshots/2.png}

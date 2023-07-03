@@ -22,6 +22,18 @@ cargo run -- space_invaders.ch8
 ```
 
 
+### Keyboard
+
+The following keys can be used to control the emulator:
+
+```
+|1|2|3|4|
+|Q|W|E|R|
+|A|S|D|F|
+|Z|X|C|V|
+```
+
+
 ## TODO's
 
 -  Implement multithreading to reduce lag.

@@ -16,6 +16,16 @@ My own take on a very simple chip8 emulator, using rust and the wgpu project.
    cargo run -- space_invaders.ch8
    @end
 
+*** Keyboard
+    The following keys can be used to control the emulator:
+
+    @code
+    |1|2|3|4|
+    |Q|W|E|R|
+    |A|S|D|F|
+    |Z|X|C|V|
+    @end
+
 ** TODO's
    - ( ) Implement multithreading to reduce lag.
    - ( ) Implement pixel-art upscaling shader.

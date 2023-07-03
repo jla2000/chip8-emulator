@@ -34,17 +34,19 @@ pub fn nibbles(value: u16) -> (u8, u8, u8, u8) {
     )
 }
 
-pub enum Chip8Event {
-    UpdateDisplay,
+pub type VideoMemory = [u8; SCREEN_WIDTH * SCREEN_HEIGHT];
+
+pub enum Chip8Event<'a> {
+    UpdateDisplay(&'a VideoMemory),
     StartBeep,
     StopBeep,
 }
 
 pub struct Chip8State {
     pub keyboard: Keyboard,
+    video_mem: VideoMemory,
     memory: [u8; 4096],
     stack: Vec<u16>,
-    pub graphics: [u8; SCREEN_WIDTH * SCREEN_HEIGHT],
     regs: [u8; 16],
     pc: usize,
     i: u16,
@@ -63,7 +65,7 @@ impl Chip8State {
             keyboard: Keyboard::new(),
             memory,
             stack: vec![],
-            graphics: [0x00; SCREEN_WIDTH * SCREEN_HEIGHT],
+            video_mem: [0; SCREEN_WIDTH * SCREEN_HEIGHT],
             regs: [0x00; 16],
             pc: 0x0000,
             i: 0x0000,
@@ -95,7 +97,7 @@ impl Chip8State {
 
         match nibbles(opcode) {
             (0x0, 0x0, 0xE, 0x0) => {
-                self.graphics.iter_mut().for_each(|v| *v = 0);
+                self.video_mem.iter_mut().for_each(|v| *v = 0);
             }
             (0x0, 0x0, 0xE, 0xE) => {
                 let return_address = self.stack.pop().unwrap();
@@ -201,15 +203,15 @@ impl Chip8State {
                     for x_offset in 0..8usize {
                         if sprite_byte & (0x80 >> x_offset) != 0 {
                             let dst_pixel = (y + y_offset) * SCREEN_WIDTH + x + x_offset;
-                            if self.graphics[dst_pixel] == 1 {
+                            if self.video_mem[dst_pixel] == 1 {
                                 self.regs[VF] = 1;
                             }
-                            self.graphics[dst_pixel] ^= 1;
+                            self.video_mem[dst_pixel] ^= 1;
                         }
                     }
                 }
 
-                event = Some(Chip8Event::UpdateDisplay);
+                event = Some(Chip8Event::UpdateDisplay(&self.video_mem));
             }
             (0xE, vx, 0x9, 0xE) => {
                 let key_index = self.regs[vx as usize] as usize;

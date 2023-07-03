@@ -42,7 +42,7 @@ async fn run() {
 
         while cycle_clock.update() {
             match chip8_state.emulate_cycle() {
-                Some(Chip8Event::UpdateDisplay) => renderer.update_display(&chip8_state),
+                Some(Chip8Event::UpdateDisplay(video_mem)) => renderer.update_display(video_mem),
                 Some(Chip8Event::StartBeep) => beeper.start(),
                 Some(Chip8Event::StopBeep) => beeper.stop(),
                 None => {}

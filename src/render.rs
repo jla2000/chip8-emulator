@@ -60,7 +60,7 @@ pub const QUAD_VERTICES: &[Vertex] = &[
 pub const QUAD_INDICES: &[u16] = &[0, 1, 2, 0, 2, 3];
 
 impl Renderer {
-    pub fn update_display(&mut self, chip8_state: &Chip8State) {
+    pub fn update_display(&mut self, video_mem: &VideoMemory) {
         self.queue.write_texture(
             wgpu::ImageCopyTexture {
                 texture: &self.display_texture,
@@ -68,7 +68,7 @@ impl Renderer {
                 origin: wgpu::Origin3d::ZERO,
                 aspect: wgpu::TextureAspect::All,
             },
-            chip8_state.graphics.as_slice(),
+            video_mem.as_slice(),
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(self.texture_size.width),

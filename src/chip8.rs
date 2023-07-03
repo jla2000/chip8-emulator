@@ -53,6 +53,7 @@ pub struct Chip8State {
     sound_timer: u8,
     delay_timer: u8,
     timer_clock: fixedstep::FixedStep,
+    cycle_clock: fixedstep::FixedStep,
     beeping: bool,
 }
 
@@ -72,6 +73,7 @@ impl Chip8State {
             sound_timer: 0x00,
             delay_timer: 0x00,
             timer_clock: fixedstep::FixedStep::start(60.0),
+            cycle_clock: fixedstep::FixedStep::start(500.0),
             beeping: false,
         }
     }
@@ -86,7 +88,9 @@ impl Chip8State {
         ((self.memory[self.pc] as u16) << 8) | (self.memory[self.pc + 1] as u16)
     }
 
-    pub fn update_timers(&mut self) {}
+    pub fn cycle_available(&mut self) -> bool {
+        self.cycle_clock.update()
+    }
 
     pub fn emulate_cycle(&mut self) -> Option<Chip8Event> {
         let mut event = None;

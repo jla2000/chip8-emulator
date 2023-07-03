@@ -21,9 +21,6 @@ async fn run() {
 
     chip8_state.load_rom(include_bytes!(r"assets/space_invaders.ch8"));
 
-    let mut cycle_clock = fixedstep::FixedStep::start(500.0);
-    let mut timer_clock = fixedstep::FixedStep::start(60.0);
-
     while !window_state.window.should_close() {
         window_state.glfw.poll_events();
         for (_, event) in glfw::flush_messages(&window_state.events) {
@@ -40,17 +37,13 @@ async fn run() {
             }
         }
 
-        while cycle_clock.update() {
+        while chip8_state.cycle_available() {
             match chip8_state.emulate_cycle() {
                 Some(Chip8Event::UpdateDisplay(video_mem)) => renderer.update_display(video_mem),
                 Some(Chip8Event::StartBeep) => beeper.start(),
                 Some(Chip8Event::StopBeep) => beeper.stop(),
                 None => {}
             }
-        }
-
-        if timer_clock.update() {
-            chip8_state.update_timers();
         }
     }
 }

@@ -25,6 +25,8 @@ cargo run -- space_invaders.ch8
 ## TODO's
 
 -  Implement multithreading to reduce lag.
+-  Implement pixel-art upscaling shader.
+-  Refactor code.
 
 
 ## Screenshots

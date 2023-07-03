@@ -18,6 +18,8 @@ My own take on a very simple chip8 emulator, using rust and the wgpu project.
 
 ** TODO's
    - ( ) Implement multithreading to reduce lag.
+   - ( ) Implement pixel-art upscaling shader.
+   - ( ) Refactor code.
 
 ** Screenshots
    ![Screenshot 1]{./screenshots/1.png}

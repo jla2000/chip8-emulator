@@ -22,6 +22,11 @@ cargo run -- space_invaders.ch8
 ```
 
 
+## TODO's
+
+-  Implement multithreading to reduce lag.
+
+
 ## Screenshots
 
 ![Screenshot 1](./screenshots/1.png)

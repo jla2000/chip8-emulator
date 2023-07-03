@@ -59,12 +59,9 @@ pub struct Chip8State {
 
 impl Chip8State {
     pub fn new() -> Self {
-        let mut memory = [0x00; 4096];
-        memory[0..FONTSET.len()].clone_from_slice(FONTSET);
-
         Self {
             keyboard: Keyboard::new(),
-            memory,
+            memory: [0x00; 4096],
             stack: vec![],
             video_mem: [0; SCREEN_WIDTH * SCREEN_HEIGHT],
             regs: [0x00; 16],
@@ -79,6 +76,9 @@ impl Chip8State {
     }
 
     pub fn load_rom(&mut self, rom_bytes: &[u8]) {
+        // Load fonts
+        self.memory[0..FONTSET.len()].clone_from_slice(FONTSET);
+        // Load rom
         self.memory[ROM_START_ADDRESS..ROM_START_ADDRESS + rom_bytes.len()]
             .clone_from_slice(rom_bytes);
         self.pc = ROM_START_ADDRESS;

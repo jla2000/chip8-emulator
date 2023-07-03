@@ -128,7 +128,7 @@ impl Renderer {
             format: surface_format,
             width: size.0 as u32,
             height: size.1 as u32,
-            present_mode: wgpu::PresentMode::AutoNoVsync,
+            present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
         };

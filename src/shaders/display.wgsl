@@ -26,5 +26,6 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
   var pixel = textureSample(display_texture, display_sampler, in.tex_coords).r;
-  return vec4(vec3(ceil(pixel)), 1.0);
+  var pixel_color = vec3(ceil(pixel));
+  return vec4(pixel_color, 1.0);
 }

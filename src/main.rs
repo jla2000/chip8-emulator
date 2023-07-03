@@ -19,7 +19,7 @@ async fn run() {
     let mut renderer = Renderer::new(&window_state.window).await;
     let mut beeper = Beeper::new();
 
-    chip8_state.load_rom(include_bytes!(r"assets/space_invaders.ch8"));
+    chip8_state.load_rom(include_bytes!(r"../space_invaders.ch8"));
 
     while !window_state.window.should_close() {
         window_state.glfw.poll_events();

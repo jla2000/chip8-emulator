@@ -20,7 +20,7 @@ jobs:
     - name: Install linux dependencies
       run: |
         sudo apt update
-        sudo apt install -y --no-install-recommends libasound2-dev pkg-config libxrandr-dev libxinerama-dev
+        sudo apt install -y --no-install-recommends libasound2-dev pkg-config libxrandr-dev libxinerama-dev libxcursor
 
     - name: Build
       run: cargo build --verbose

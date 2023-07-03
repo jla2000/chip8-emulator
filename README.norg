@@ -28,6 +28,7 @@ My own take on a very simple chip8 emulator, using rust and the wgpu project.
 
 ** Resources
    - [CHIP-8]{https://en.wikipedia.org/wiki/CHIP-8}
+   - [wgpu]{https://wgpu.rs}
 
 ** TODO's
    - ( ) Implement multithreading to reduce lag.

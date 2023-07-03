@@ -37,6 +37,7 @@ The following keys can be used to control the emulator:
 ## Resources
 
 - [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8)
+- [wgpu](https://wgpu.rs)
 
 
 ## TODO's

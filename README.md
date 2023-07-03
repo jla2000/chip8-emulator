@@ -1,4 +1,4 @@
-# chip8-emulator
+# chip8-emulator ![build status](https://github.com/jla2000/chip8-emulator/actions/workflows/rust.yml/badge.svg)
 
 
 My own take on a very simple chip8 emulator, using rust and the wgpu project.

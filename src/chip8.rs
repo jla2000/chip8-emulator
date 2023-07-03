@@ -102,6 +102,7 @@ impl Chip8State {
         match nibbles(opcode) {
             (0x0, 0x0, 0xE, 0x0) => {
                 self.video_mem.iter_mut().for_each(|v| *v = 0);
+                event = Some(Chip8Event::UpdateDisplay(&self.video_mem));
             }
             (0x0, 0x0, 0xE, 0xE) => {
                 let return_address = self.stack.pop().unwrap();
@@ -219,13 +220,13 @@ impl Chip8State {
             }
             (0xE, vx, 0x9, 0xE) => {
                 let key_index = self.regs[vx as usize] as usize;
-                if self.keyboard.get_key_state(key_index) {
+                if self.keyboard.is_key_pressed(key_index) {
                     self.pc += 2;
                 }
             }
             (0xE, vx, 0xA, 0x1) => {
                 let key_index = self.regs[vx as usize] as usize;
-                if !self.keyboard.get_key_state(key_index) {
+                if !self.keyboard.is_key_pressed(key_index) {
                     self.pc += 2;
                 }
             }
@@ -267,7 +268,11 @@ impl Chip8State {
                 self.regs[..(vx + 1) as usize].clone_from_slice(&self.memory[start..end]);
             }
             _ => {
-                unimplemented!("0x{:04x}: 0x{:04x}", self.pc, opcode);
+                unimplemented!(
+                    "Opcode 0x{:04x} at memory location 0x{:04x}",
+                    opcode,
+                    self.pc
+                );
             }
         }
 

@@ -57,7 +57,7 @@ impl Keyboard {
         self.last_press
     }
 
-    pub fn get_key_state(&mut self, index: usize) -> bool {
+    pub fn is_key_pressed(&mut self, index: usize) -> bool {
         self.key_state[index]
     }
 }

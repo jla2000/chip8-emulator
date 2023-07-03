@@ -34,11 +34,17 @@ The following keys can be used to control the emulator:
 ```
 
 
+## Resources
+
+- [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8)
+
+
 ## TODO's
 
 -  Implement multithreading to reduce lag.
 -  Implement pixel-art upscaling shader.
 -  Refactor code.
+-  Fix key polling.
 
 
 ## Screenshots

@@ -1,21 +1,25 @@
 use dotenv::dotenv;
+use rodio::OutputStream;
+use rodio::Sink;
 
 mod chip8;
 mod keyboard;
 mod render;
+mod sound;
 mod window;
 
 use chip8::*;
 use render::*;
+use sound::*;
 use window::*;
 
 async fn run() {
     let mut window_state = create_window();
     let mut chip8_state = Chip8State::new();
     let mut renderer = Renderer::new(&window_state.window).await;
-    let mut update_display = false;
+    let mut beeper = Beeper::new();
 
-    chip8_state.load_rom(include_bytes!(r"assets/tetris.ch8"));
+    chip8_state.load_rom(include_bytes!(r"assets/space_invaders.ch8"));
 
     let mut cycle_clock = fixedstep::FixedStep::start(500.0);
     let mut timer_clock = fixedstep::FixedStep::start(60.0);
@@ -36,12 +40,12 @@ async fn run() {
             }
         }
 
-        if cycle_clock.update() {
-            chip8_state.emulate_cycle(&mut update_display);
-
-            if update_display {
-                renderer.update_display(&chip8_state);
-                update_display = false;
+        while cycle_clock.update() {
+            match chip8_state.emulate_cycle() {
+                Some(Chip8Event::UpdateDisplay) => renderer.update_display(&chip8_state),
+                Some(Chip8Event::StartBeep) => beeper.start(),
+                Some(Chip8Event::StopBeep) => beeper.stop(),
+                None => {}
             }
         }
 

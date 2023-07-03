@@ -34,6 +34,12 @@ pub fn nibbles(value: u16) -> (u8, u8, u8, u8) {
     )
 }
 
+pub enum Chip8Event {
+    UpdateDisplay,
+    StartBeep,
+    StopBeep,
+}
+
 pub struct Chip8State {
     pub keyboard: Keyboard,
     memory: [u8; 4096],
@@ -44,6 +50,8 @@ pub struct Chip8State {
     i: u16,
     sound_timer: u8,
     delay_timer: u8,
+    timer_clock: fixedstep::FixedStep,
+    beeping: bool,
 }
 
 impl Chip8State {
@@ -61,6 +69,8 @@ impl Chip8State {
             i: 0x0000,
             sound_timer: 0x00,
             delay_timer: 0x00,
+            timer_clock: fixedstep::FixedStep::start(60.0),
+            beeping: false,
         }
     }
 
@@ -74,16 +84,11 @@ impl Chip8State {
         ((self.memory[self.pc] as u16) << 8) | (self.memory[self.pc + 1] as u16)
     }
 
-    pub fn update_timers(&mut self) {
-        self.delay_timer = self.delay_timer.saturating_sub(1);
-        self.sound_timer = self.sound_timer.saturating_sub(1);
-    }
+    pub fn update_timers(&mut self) {}
 
-    pub fn is_beeping(&self) -> bool {
-        self.sound_timer > 0
-    }
+    pub fn emulate_cycle(&mut self) -> Option<Chip8Event> {
+        let mut event = None;
 
-    pub fn emulate_cycle(&mut self, update_display: &mut bool) {
         let opcode = self.fetch_next_opcode();
         let nnn = opcode & 0x0fff;
         let nn = opcode as u8;
@@ -95,16 +100,16 @@ impl Chip8State {
             (0x0, 0x0, 0xE, 0xE) => {
                 let return_address = self.stack.pop().unwrap();
                 self.pc = return_address as usize;
-                return;
+                return None;
             }
             (0x1, _, _, _) => {
                 self.pc = nnn as usize;
-                return;
+                return None;
             }
             (0x2, _, _, _) => {
                 self.stack.push((self.pc + 2) as u16);
                 self.pc = nnn as usize;
-                return;
+                return None;
             }
             (0x3, vx, _, _) => {
                 if self.regs[vx as usize] == nn {
@@ -177,7 +182,7 @@ impl Chip8State {
             }
             (0xB, _, _, _) => {
                 self.pc = (self.regs[0] as u16 + nnn) as usize;
-                return;
+                return None;
             }
             (0xC, vx, _, _) => {
                 let random: u8 = rand::thread_rng().gen();
@@ -204,7 +209,7 @@ impl Chip8State {
                     }
                 }
 
-                *update_display = true;
+                event = Some(Chip8Event::UpdateDisplay);
             }
             (0xE, vx, 0x9, 0xE) => {
                 let key_index = self.regs[vx as usize] as usize;
@@ -225,7 +230,7 @@ impl Chip8State {
                 if let Some(key_index) = self.keyboard.wait_for_key() {
                     self.regs[vx as usize] = key_index as u8;
                 } else {
-                    return;
+                    return None;
                 }
             }
             (0xF, vx, 0x1, 0x5) => {
@@ -260,6 +265,20 @@ impl Chip8State {
             }
         }
 
+        while self.timer_clock.update() {
+            self.delay_timer = self.delay_timer.saturating_sub(1);
+            self.sound_timer = self.sound_timer.saturating_sub(1);
+        }
+
+        if self.sound_timer > 0 && !self.beeping {
+            event = Some(Chip8Event::StartBeep);
+            self.beeping = true;
+        } else if self.sound_timer == 0 && self.beeping {
+            event = Some(Chip8Event::StopBeep);
+            self.beeping = false;
+        }
+
         self.pc += 2;
+        event
     }
 }

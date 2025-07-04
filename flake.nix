@@ -43,6 +43,8 @@
     in
     {
       checks.${system} = {
+        inherit main-crate;
+
         clippy = craneLib.cargoClippy (commonArgs // {
           inherit cargoArtifacts;
         });

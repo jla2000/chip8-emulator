@@ -9,11 +9,9 @@
       pkgs = inputs.nixpkgs.legacyPackages.${system};
     in
     {
-      devShells.${system}.default = pkgs.mkShell rec {
+      devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
-          vulkan-loader
           libGL
-          alsa-lib
           xorg.libXi
           xorg.libX11
           xorg.libXrandr
@@ -21,10 +19,11 @@
           xorg.libXinerama
         ];
         nativeBuildInputs = with pkgs; [
+          rustc
+          cargo
           cmake
-          pkg-config
+          rustPlatform.bindgenHook
         ];
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
       };
     };
 }

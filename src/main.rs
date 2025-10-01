@@ -19,7 +19,7 @@ async fn run(rom: &[u8]) {
     let mut window_state = create_window();
     let mut chip8_state = Chip8State::new();
     let mut renderer = Renderer::new(&window_state.window).await;
-    let mut beeper = Beeper::new();
+    // let mut beeper = Beeper::new();
 
     chip8_state.load_rom(rom);
 
@@ -40,9 +40,9 @@ async fn run(rom: &[u8]) {
         while chip8_state.cycle_available() {
             match chip8_state.emulate_cycle() {
                 Some(Chip8Event::UpdateDisplay(video_mem)) => renderer.update_display(video_mem),
-                Some(Chip8Event::StartBeep) => beeper.start(),
-                Some(Chip8Event::StopBeep) => beeper.stop(),
-                None => {}
+                // Some(Chip8Event::StartBeep) => beeper.start(),
+                // Some(Chip8Event::StopBeep) => beeper.stop(),
+                _ => {}
             }
         }
     }

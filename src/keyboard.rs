@@ -14,7 +14,7 @@ impl Keyboard {
     }
 
     pub fn update(&mut self, index: usize, pressed: bool) {
-        self.key_state[key_index] = pressed;
+        self.key_state[index] = pressed;
         if pressed {
             self.last_press = Some(index);
         }

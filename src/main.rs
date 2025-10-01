@@ -28,9 +28,7 @@ fn run(rom: &[u8]) {
         while chip8_state.cycle_available() {
             match chip8_state.emulate_cycle() {
                 Some(Chip8Event::UpdateDisplay(video_mem)) => {
-                    let fixed_mem: Vec<_> = video_mem.iter().map(|v| v * 255).collect();
-
-                    screen_texture.update_texture(&fixed_mem);
+                    screen_texture.update_texture(video_mem);
                     draw_handle.draw_texture_pro(
                         &screen_texture,
                         Rectangle::new(

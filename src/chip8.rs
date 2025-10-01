@@ -209,10 +209,10 @@ impl Chip8State {
                     for x_offset in 0..8usize {
                         if sprite_byte & (0x80 >> x_offset) != 0 {
                             let dst_pixel = (y + y_offset) * SCREEN_WIDTH + x + x_offset;
-                            if self.video_mem[dst_pixel] == 1 {
+                            if self.video_mem[dst_pixel] == 255 {
                                 self.regs[VF] = 1;
                             }
-                            self.video_mem[dst_pixel] ^= 1;
+                            self.video_mem[dst_pixel] ^= 255;
                         }
                     }
                 }

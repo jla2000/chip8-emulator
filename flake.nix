@@ -9,7 +9,7 @@
       pkgs = inputs.nixpkgs.legacyPackages.${system};
     in
     {
-      devShells.${system}.default = pkgs.mkShell {
+      devShells.${system}.default = pkgs.mkShell rec {
         buildInputs = with pkgs; [
           libGL
           xorg.libXi
@@ -24,6 +24,7 @@
           cmake
           rustPlatform.bindgenHook
         ];
+        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
       };
     };
 }

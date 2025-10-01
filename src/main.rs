@@ -1,47 +1,51 @@
-use std::io::Read;
+use raylib::prelude::*;
 
-use dotenv::dotenv;
-use rodio::OutputStream;
-use rodio::Sink;
+use std::io::Read;
 
 mod chip8;
 mod keyboard;
-mod render;
-mod sound;
-mod window;
 
 use chip8::*;
-use render::*;
-use sound::*;
-use window::*;
 
-async fn run(rom: &[u8]) {
-    let mut window_state = create_window();
+fn run(rom: &[u8]) {
     let mut chip8_state = Chip8State::new();
-    let mut renderer = Renderer::new(&window_state.window).await;
-    // let mut beeper = Beeper::new();
-
     chip8_state.load_rom(rom);
 
-    while !window_state.window.should_close() {
-        window_state.glfw.poll_events();
-        for (_, event) in glfw::flush_messages(&window_state.events) {
-            match event {
-                glfw::WindowEvent::FramebufferSize(width, height) => {
-                    renderer.resize((width as u32, height as u32));
-                }
-                glfw::WindowEvent::Key(key, _, action, _) => {
-                    chip8_state.keyboard.update(key, action);
-                }
-                _ => {}
-            }
-        }
+    let (mut rl, thread) = raylib::init()
+        .size(1000, 500)
+        .title("chip8-emulator")
+        .build();
+
+    let mut blank_image = Image::gen_image_color(64, 32, Color::BLACK);
+    blank_image.set_format(PixelFormat::PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+
+    let mut screen_texture = rl.load_texture_from_image(&thread, &blank_image).unwrap();
+
+    rl.set_target_fps(60);
+    while !rl.window_should_close() {
+        let mut draw_handle = rl.begin_drawing(&thread);
 
         while chip8_state.cycle_available() {
             match chip8_state.emulate_cycle() {
-                Some(Chip8Event::UpdateDisplay(video_mem)) => renderer.update_display(video_mem),
-                // Some(Chip8Event::StartBeep) => beeper.start(),
-                // Some(Chip8Event::StopBeep) => beeper.stop(),
+                Some(Chip8Event::UpdateDisplay(video_mem)) => {
+                    let fixed_mem: Vec<_> = video_mem.iter().map(|v| v * 255).collect();
+
+                    screen_texture.update_texture(&fixed_mem);
+                    draw_handle.draw_texture_pro(
+                        &screen_texture,
+                        Rectangle::new(
+                            0.0,
+                            0.0,
+                            screen_texture.width as f32,
+                            screen_texture.height as f32,
+                        ),
+                        Rectangle::new(0.0, 0.0, 1000.0, 500.0),
+                        Vector2::new(0.0, 0.0),
+                        0.0,
+                        Color::WHITE,
+                    );
+                    draw_handle.draw_fps(0, 0);
+                }
                 _ => {}
             }
         }
@@ -58,14 +62,11 @@ fn read_rom(filename: &str) -> std::io::Result<Vec<u8>> {
 }
 
 fn main() {
-    dotenv().ok();
-    env_logger::init();
-
     let args = std::env::args().collect::<Vec<String>>();
     if args.len() != 2 {
         println!("Usage: chip8-emulator <ROM_FILE>");
     } else {
         let rom = read_rom(&args[1]).unwrap();
-        pollster::block_on(run(rom.as_slice()));
+        run(rom.as_slice());
     }
 }
